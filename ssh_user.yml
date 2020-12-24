@@ -1,0 +1,30 @@
+---
+
+  - name: "SSH user creation"
+    hosts: all
+    gather_facts: no
+    become: true
+    vars_files:
+       users.vars
+    tasks:   
+
+      - name: "Add user to the server"
+        user:
+          name: "{{ item }}"
+          state: present
+        with_items: "{{ user }}"
+
+      - name: "Add key to the server"
+        authorized_key:
+          user: "{{ item }}"
+          key: "{{ lookup('file', '{{ item }}.pub') }}"
+          state: present
+        with_items: "{{ user }}"  
+
+      - name: "Allow  users to sudo without a password"
+        lineinfile:
+          dest: "/etc/sudoers"
+          state: "present"
+          regexp: "^%admin"
+          line: "{{ item }} ALL=(ALL) NOPASSWD: ALL"
+        with_items: "{{ user }}"
